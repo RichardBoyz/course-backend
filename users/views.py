@@ -22,6 +22,8 @@ from .models import User
 
 
 class RegisterView(APIView):
+    authentication_classes = []
+
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -72,6 +74,6 @@ class RefreshAPIView(APIView):
 class LogoutAPIView(APIView):
     def post(self, request):
         response = Response()
-        response.delete_cookie(key="refreshToken")
+        response.delete_cookie(key="jwt")
         response.data = {"message": "success"}
         return response

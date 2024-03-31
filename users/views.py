@@ -3,16 +3,17 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
-from rest_framework.authentication import get_authorization_header
-from .serializers import UserSerializer
+from django_filters.rest_framework import DjangoFilterBackend
+from .serializers import UserSerializer, TeacherSerializer
+from courses.serializers import GetCourseSerializer
+from .filters import UserFilter
+from rest_framework.decorators import action
 
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 
 from .authentication import (
     create_access_token,
-    create_refresh_token,
-    decode_access_token,
     decode_refresh_token,
 )
 
@@ -46,18 +47,29 @@ class LoginView(APIView):
             raise AuthenticationFailed("Incorrect password")
 
         access_token = create_access_token(user.id)
-        refresh_token = create_refresh_token(user.id)
 
         response = Response()
 
         response.set_cookie(key="jwt", value=access_token, httponly=True)
-        response.data = {"token": access_token}
+        response.data = {
+            "token": access_token,
+            "user_id": user.id,
+            "role": user.role,
+        }
         return response
 
 
 class UserViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
+
+    @action(methods=["GET"], detail=False, url_path="teachers")
+    def getTeacher(self, request):
+        users = User.objects.filter(role="teacher")
+        serializer_data = TeacherSerializer(users, many=True).data
+        return Response(serializer_data)
 
 
 class RefreshAPIView(APIView):

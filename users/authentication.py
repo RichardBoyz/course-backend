@@ -5,9 +5,12 @@ from users.models import User
 
 class AppAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
-        token = request.COOKIES.get("jwt")
+        token = request.META.get("HTTP_AUTHORIZATION")
+
         if not token:
             raise exceptions.AuthenticationFailed("No token provided")
+
+        token = token.split(" ")[1]
 
         user_id = decode_access_token(token=token)
 

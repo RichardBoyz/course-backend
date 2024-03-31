@@ -1,6 +1,10 @@
 from rest_framework.viewsets import ModelViewSet
 from .models import Course
-from .serializers import CourseSerializer
+from .serializers import (
+    BaseCourseSerializer,
+    GetCourseSerializer,
+    CreateCourseSerializer,
+)
 from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.response import Response
@@ -9,9 +13,13 @@ from users.serializers import UserSerializer
 
 class CourseViewSet(ModelViewSet):
     queryset = Course.objects.all()
-    serializer_class = CourseSerializer
+    serializer_class = BaseCourseSerializer
 
     def get_serializer_class(self):
+        if self.action == "create":
+            return CreateCourseSerializer
+        if self.action == "list" or self.action == "retrieve":
+            return GetCourseSerializer
         return super().get_serializer_class()
 
     @action(methods=["GET"], detail=True, url_path="students")
